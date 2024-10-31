@@ -1,8 +1,35 @@
-/*
+@tailwind components;
+@tailwind utilities;
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* you know we could just add a class to this element in our postprocessor but that would completely mess up Obsidian */
+section.footnotes {
+	display: none;
+}
+.markdown-preview-view {
+	& .omnireader-higlight {
+		&:hover {
+			filter: saturate(2);
+		}
+		& a:hover {
+			text-decoration: none;
+		}
+	}
+}
+.is-live-preview {
+	& .cm-highlight {
+		cursor: pointer;
+		&:hover {
+			filter: saturate(2);
+		}
+	}
 
-If your plugin does not need CSS, delete this file.
+	/* hide higlight markdown markers */
+	& .cm-formatting-highlight {
+		display: none;
+	}
 
-*/
+	/* hide the inline footnotes markdown */
+	& .cm-inline-footnote {
+		display: none;
+	}
+}

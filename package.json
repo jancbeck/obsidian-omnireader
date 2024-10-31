@@ -2,25 +2,35 @@
 	"name": "obsidian-sample-plugin",
 	"version": "1.0.0",
 	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
-	"main": "main.js",
+	"main": "dist/main.js",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"dev": "run-p 'build:css -- --watch' 'build:esbuild'",
+		"build": "npm run build:css &&  npm run ts:check && npm run build:esbuild production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"ts:check": "tsc -noEmit -skipLibCheck",
+		"build:css": "npx tailwindcss -i ./src/styles.css -o ./dist/styles.css",
+		"build:esbuild": "node esbuild.config.mjs"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
-		"chokidar": "^4.0.1",
 		"esbuild": "0.17.3",
+		"eslint-plugin-tailwindcss": "^3.17.5",
+		"npm-run-all2": "^7.0.1",
 		"obsidian": "latest",
+		"tailwindcss": "^3.4.14",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
 	},
-	"dependencies": {}
+	"dependencies": {
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	}
 }
