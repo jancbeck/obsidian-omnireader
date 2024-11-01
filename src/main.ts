@@ -1,19 +1,11 @@
-import {
-	App,
-	Editor,
-	MarkdownView,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-} from "obsidian";
-import { AnnotateModal } from "./AnnotateModal";
-import allColorNames from "./colors";
+import { MarkdownView, Notice, Plugin } from "obsidian";
+
 import {
 	highlightExtension,
-	openPopover,
 	cleanup as cleanupPopover,
-} from "./annotationExtension";
+} from "./editor/extension";
+import { OmnireaderSettingTab } from "./settings";
+import { createHighlightCommand } from "./editor/commands";
 
 const DEFAULT_SETTINGS = {
 	expandSelection: true,
@@ -64,7 +56,7 @@ export default class OmnireaderPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						this.createHighlightCommand(markdownView.editor);
+						createHighlightCommand(markdownView.editor);
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -88,7 +80,7 @@ export default class OmnireaderPlugin extends Plugin {
 			// require modifier key when not in annotate mode
 			if (!e.metaKey && !this.isAnnotateModeOn) return;
 
-			this.createHighlightCommand(editor);
+			createHighlightCommand(editor);
 		});
 
 		this.registerMarkdownPostProcessor((element, ctx) => {
@@ -159,93 +151,6 @@ export default class OmnireaderPlugin extends Plugin {
 			`Annotation Mode ${this.isAnnotateModeOn ? "Enabled" : "Disabled"}`
 		);
 	}
-	createHighlightCommand(editor: Editor) {
-		let selectedText = editor.getSelection();
-
-		if (!selectedText) {
-			new Notice(`No text selected`);
-			return false;
-		}
-
-		const sameLine =
-			editor.getCursor("from").line === editor.getCursor("to").line;
-
-		if (!sameLine) {
-			new Notice(`Only same line highlights are supported. Sorry!`);
-			return false;
-		}
-
-		const selectionContainsHighlight = selectedText.includes("==");
-
-		if (selectionContainsHighlight) {
-			new Notice(`Selection already contains a highlight`);
-			return false;
-		}
-
-		if (this.settings.expandSelection) {
-			selectedText = this.expandSelectionBoundary(editor);
-		}
-
-		const annotationText = `==${selectedText}==`;
-
-		editor.replaceSelection(annotationText);
-		editor.blur();
-		openPopover();
-	}
-
-	expandSelectionBoundary(editor: Editor) {
-		const from = editor.getCursor("from");
-		const to = editor.getCursor("to");
-		const lineFrom = editor.getLine(from.line);
-		const lineTo = editor.getLine(to.line);
-		let start = from.ch;
-		let end = to.ch;
-		while (
-			start > 0 &&
-			lineFrom[start - 1].match(/\w/) &&
-			lineFrom.substring(start - 2, start) !== "=="
-		) {
-			start--;
-		}
-		while (
-			end < lineTo.length &&
-			lineTo[end].match(/\w/) &&
-			lineTo.substring(end, end + 2) !== "=="
-		) {
-			end++;
-		}
-		editor.setSelection(
-			{ line: from.line, ch: start },
-			{ line: to.line, ch: end }
-		);
-		return editor.getSelection();
-	}
-
-	matchInlineFootnote(editor: Editor) {
-		const cursor = editor.getCursor();
-		const line = editor.getLine(cursor.line);
-		const textAfterCursor = line.substring(cursor.ch);
-
-		// Match pattern ^[...] with any content inside brackets
-		const footnoteMatch = textAfterCursor
-			.trimStart()
-			.match(/^\^\[((?:[^[\]]|\[(?:[^[\]]|\[[^[\]]*\])*\])*)\]/);
-
-		if (footnoteMatch) {
-			const whitespaceBeforeFootnote =
-				textAfterCursor.length - textAfterCursor.trimStart().length;
-			const matchStart = cursor.ch + whitespaceBeforeFootnote;
-			const matchEnd = matchStart + footnoteMatch[0].length;
-
-			return {
-				from: { line: cursor.line, ch: matchStart },
-				to: { line: cursor.line, ch: matchEnd },
-				content: footnoteMatch[1], // Group 1 contains just the content inside brackets
-			};
-		}
-
-		return null;
-	}
 
 	onunload() {
 		cleanupPopover();
@@ -261,51 +166,5 @@ export default class OmnireaderPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class OmnireaderSettingTab extends PluginSettingTab {
-	plugin: OmnireaderPlugin;
-
-	constructor(app: App, plugin: OmnireaderPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName("Expand Selection")
-			.setDesc("Expand the selection boundary to the word")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.expandSelection)
-					.onChange(async (value) => {
-						this.plugin.settings.expandSelection = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Highlighting color options")
-			.setDesc(
-				document
-					.createRange()
-					.createContextualFragment(
-						"Add comma separated list of <a href='https://developer.mozilla.org/en-US/docs/Web/CSS/named-color'>color names</a>"
-					)
-			)
-			.setClass("[&_textarea]:w-full")
-			.addTextArea((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.colors)
-					.onChange(async (value) => {
-						this.plugin.settings.colors = value;
-						await this.plugin.saveSettings();
-					})
-			);
 	}
 }

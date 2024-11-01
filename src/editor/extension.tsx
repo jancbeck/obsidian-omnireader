@@ -12,7 +12,8 @@ import {
 	WidgetType,
 } from "@codemirror/view";
 import { createRoot, type Root } from "react-dom/client";
-import AnnotationPopover from "./AnnotationPopover";
+import AnnotationPopover from "./popover";
+import allColorNames from "../colors";
 
 let currentPopover: { root: Root; container: HTMLElement } | null = null;
 let lastInstance: HTMLElement | null = null;
@@ -33,7 +34,7 @@ class HighlightWidget extends WidgetType {
 		private from: number,
 		private to: number,
 		private hasAnnotation: boolean,
-		private wrapperEl: HTMLElement
+		private wrapperEl?: HTMLElement
 	) {
 		super();
 	}
@@ -79,6 +80,8 @@ class HighlightWidget extends WidgetType {
 	}
 
 	private showPopover(event: MouseEvent, view: EditorView) {
+		if (!this.wrapperEl) return;
+
 		// Remove any existing popover
 		this.removeCurrentPopover();
 

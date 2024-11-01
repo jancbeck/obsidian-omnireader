@@ -67,7 +67,7 @@ export default function AnnotationPopover({
 		>
 			<div>
 				<div className="mb-1 flex">
-					<div className="-ml-2 -mt-2 flex-1">
+					<div className="-ml-2.5 -mt-2.5 flex-1">
 						<button
 							type="button"
 							onClick={handleRemove}
@@ -79,7 +79,7 @@ export default function AnnotationPopover({
 					<button
 						type="button"
 						onClick={onClose}
-						className="clickable-icon -mr-2 -mt-2"
+						className="clickable-icon -mr-2.5 -mt-2.5"
 						ref={closeButtonRef}
 					/>
 				</div>
