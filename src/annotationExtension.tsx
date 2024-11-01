@@ -144,7 +144,7 @@ function findHighlightsAndAnnotations(doc: Text): HighlightMatch[] {
 
 	// Two regex patterns: one for highlights with annotations, one for just highlights
 	const annotatedRegex = /==([^=]+)==<!--([^>]*)-->/g;
-	const highlightRegex = /==([^=]+)==(?!<!--)/g; // Negative lookahead to avoid matching annotated ones
+	const highlightRegex = /==(?!<!--)([^=]+)==(?!<!--)/g; // Negative lookahead to avoid matching annotated ones
 
 	// Process each line
 	for (let i = 1; i <= doc.lines; i++) {
