@@ -1,7 +1,11 @@
 import { Editor, Notice } from "obsidian";
 import { openPopover } from "./extension";
+import type OmnireaderPlugin from "@";
 
-export function createHighlightCommand(editor: Editor) {
+export function createHighlightCommand(
+	editor: Editor,
+	plugin: OmnireaderPlugin
+) {
 	let selectedText = editor.getSelection();
 
 	if (!selectedText) {
@@ -24,7 +28,7 @@ export function createHighlightCommand(editor: Editor) {
 		return false;
 	}
 
-	if (this.settings.expandSelection) {
+	if (plugin.settings.expandSelection) {
 		selectedText = expandSelectionBoundary(editor);
 	}
 

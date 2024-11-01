@@ -12,7 +12,11 @@
 		"isolatedModules": true,
 		"strictNullChecks": true,
 		"jsx": "react-jsx",
-		"lib": ["DOM", "ES5", "ES6", "ES7"]
+		"lib": ["DOM", "ES5", "ES6", "ES7"],
+		"paths": {
+			"@": ["./src/main.ts"],
+			"@/*": ["./src/*"]
+		}
 	},
 	"include": ["./src"]
 }

@@ -283,7 +283,6 @@ export function createHighlight(view: EditorView) {
 
 export function openPopover() {
 	if (lastInstance) {
-		console.log(lastInstance);
 		lastInstance.dispatchEvent(new Event("click"));
 	}
 }

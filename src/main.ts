@@ -4,8 +4,9 @@ import {
 	highlightExtension,
 	cleanup as cleanupPopover,
 } from "./editor/extension";
-import { OmnireaderSettingTab } from "./settings";
-import { createHighlightCommand } from "./editor/commands";
+import { OmnireaderSettingTab } from "@/settings";
+import { createHighlightCommand } from "@/editor/commands";
+import postprocessor from "@/preview/postprocessor";
 
 const DEFAULT_SETTINGS = {
 	expandSelection: true,
@@ -56,7 +57,7 @@ export default class OmnireaderPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						createHighlightCommand(markdownView.editor);
+						createHighlightCommand(markdownView.editor, this);
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -80,68 +81,10 @@ export default class OmnireaderPlugin extends Plugin {
 			// require modifier key when not in annotate mode
 			if (!e.metaKey && !this.isAnnotateModeOn) return;
 
-			createHighlightCommand(editor);
+			createHighlightCommand(editor, this);
 		});
 
-		this.registerMarkdownPostProcessor((element, ctx) => {
-			const marks = element.findAll("mark");
-			for (const mark of marks) {
-				console.log(mark.nextElementSibling, ctx.getSectionInfo(mark));
-			}
-
-			return;
-			const references = element.findAll("mark + sup.footnote-ref");
-			// turn higlights into footnote references
-			for (const ref of references) {
-				let refAnchor = ref.children[0] as HTMLElement | null;
-				const highlight =
-					ref.previousElementSibling as HTMLElement | null;
-
-				if (!highlight || !refAnchor) continue;
-
-				refAnchor.innerHTML = highlight.innerText;
-				highlight.innerHTML = refAnchor.outerHTML;
-				ref.remove();
-
-				refAnchor = highlight.children[0] as HTMLElement | null;
-				if (!refAnchor) continue;
-				refAnchor?.style.setProperty("color", "var(--text-normal)");
-
-				this.registerDomEvent(refAnchor, "click", (e) => {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-
-					const popover = element.ownerDocument.body.find(
-						".hover-popover [data-type=footnote]"
-					);
-
-					const clickEvent = new MouseEvent("click", {
-						bubbles: true,
-						cancelable: true,
-						view: window,
-					});
-					popover?.dispatchEvent(clickEvent);
-				});
-			}
-
-			const footnotes = element.findAll("section.footnotes > ol > li");
-			// style highlights based on footnote color
-			for (const footnote of footnotes) {
-				const footnoteRefHref = footnote.getAttribute("id");
-				const ref = element.ownerDocument.body.find(
-					".footnote-link[href='#" + footnoteRefHref + "']"
-				);
-				const mark = ref?.parentElement;
-				const footnoteText = footnote.innerText;
-				const color = footnoteText.match(/@(\w+)/)?.[1];
-
-				if (!color || !mark) return;
-
-				mark.style.setProperty("--text-highlight-bg", color);
-				mark.addClass("omnireader-higlight");
-				footnote.innerText = footnote.innerText.replace(/@(\w+)/, "");
-			}
-		});
+		this.registerMarkdownPostProcessor(postprocessor);
 	}
 
 	toggleAnnotateMode() {

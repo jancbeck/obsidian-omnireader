@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { setIcon } from "obsidian";
+import { Notice } from "obsidian";
 interface AnnotationPopoverProps {
 	initialComment?: string;
 	onSave: ({
@@ -46,7 +47,7 @@ export default function AnnotationPopover({
 
 	const handleSubmit = () => {
 		if (comment.includes("-->")) {
-			console.log("Comment contains illegal characters");
+			new Notice("Comment must not contain -->");
 			return;
 		}
 		onSave({ comment });
