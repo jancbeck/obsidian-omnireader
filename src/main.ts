@@ -9,7 +9,7 @@ import {
 } from "obsidian";
 import { AnnotateModal } from "./AnnotateModal";
 import allColorNames from "./colors";
-import { annotationExtension } from "./annotationExtension";
+import { highlightExtension } from "./annotationExtension";
 
 const DEFAULT_SETTINGS = {
 	expandSelection: true,
@@ -45,7 +45,7 @@ export default class OmnireaderPlugin extends Plugin {
 		);
 
 		// Add the annotation extension to CodeMirror
-		this.registerEditorExtension(annotationExtension());
+		this.registerEditorExtension(highlightExtension());
 
 		// Add a command to create annotations
 		this.addCommand({
