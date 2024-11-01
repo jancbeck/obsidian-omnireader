@@ -1,8 +1,6 @@
 import {
 	EditorState,
-	Transaction,
 	StateField,
-	StateEffect,
 	Extension,
 	Text,
 	type Range,
@@ -12,13 +10,11 @@ import {
 	Decoration,
 	DecorationSet,
 	WidgetType,
-	ViewPlugin,
-	ViewUpdate,
 } from "@codemirror/view";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import AnnotationPopover from "./AnnotationPopover";
 
-let currentPopover: { root: any; container: HTMLElement } | null = null;
+let currentPopover: { root: Root; container: HTMLElement } | null = null;
 
 interface HighlightMatch {
 	from: number;
@@ -98,8 +94,13 @@ class HighlightWidget extends WidgetType {
 			<AnnotationPopover
 				initialComment={this.comment || ""}
 				position={position}
-				onSave={(newComment: string) => {
-					this.handleAnnotationUpdate(newComment, view);
+				onSave={({ comment, remove }) => {
+					if (remove) {
+						this.handleAnnotationRemoval(view);
+					}
+					if (typeof comment !== "undefined") {
+						this.handleAnnotationUpdate(comment, view);
+					}
 					this.removeCurrentPopover();
 				}}
 				onClose={() => {
@@ -118,6 +119,17 @@ class HighlightWidget extends WidgetType {
 			currentPopover.container.remove();
 			currentPopover = null;
 		}
+	}
+
+	private handleAnnotationRemoval(view: EditorView) {
+		const transaction = view.state.update({
+			changes: {
+				from: this.from,
+				to: this.to,
+				insert: this.highlightText,
+			},
+		});
+		view.dispatch(transaction);
 	}
 
 	private handleAnnotationUpdate(newComment: string, view: EditorView) {

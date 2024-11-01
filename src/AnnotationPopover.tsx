@@ -1,8 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface AnnotationPopoverProps {
 	initialComment?: string;
-	onSave: (comment: string) => void;
+	onSave: ({
+		comment,
+		remove,
+	}: {
+		comment?: string;
+		remove?: boolean;
+	}) => void;
 	onClose: () => void;
 	position: { x: number; y: number };
 }
@@ -36,7 +42,10 @@ export default function AnnotationPopover({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		onSave(comment);
+		onSave({ comment });
+	};
+	const handleRemove = (e: React.FormEvent) => {
+		onSave({ remove: true });
 	};
 
 	return (
@@ -59,6 +68,13 @@ export default function AnnotationPopover({
 					placeholder="Add your annotation..."
 				/>
 				<div className="flex justify-end space-x-2">
+					<button
+						type="button"
+						onClick={handleRemove}
+						className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+					>
+						Remove
+					</button>
 					<button
 						type="button"
 						onClick={onClose}
