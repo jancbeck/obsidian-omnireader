@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-
+import { setIcon } from "obsidian";
 interface AnnotationPopoverProps {
 	initialComment?: string;
 	onSave: ({
@@ -22,9 +22,11 @@ export default function AnnotationPopover({
 	const [comment, setComment] = useState(initialComment);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const popoverRef = useRef<HTMLDivElement>(null);
+	const closeButtonRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		inputRef.current?.focus();
+		if (closeButtonRef.current) setIcon(closeButtonRef.current, "x");
 
 		const handleClickOutside = (event: Event) => {
 			if (
@@ -34,62 +36,80 @@ export default function AnnotationPopover({
 				onClose();
 			}
 		};
-
 		document.addEventListener("mousedown", handleClickOutside);
-		return () =>
+		document.addEventListener("keydown", handleClickOutside);
+		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleClickOutside);
+		};
 	}, [onClose]);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSubmit = () => {
+		if (comment.includes("-->")) {
+			console.log("Comment contains illegal characters");
+			return;
+		}
 		onSave({ comment });
 	};
-	const handleRemove = (e: React.FormEvent) => {
+	const handleRemove = () => {
 		onSave({ remove: true });
 	};
 
 	return (
 		<div
 			ref={popoverRef}
-			className="fixed z-50 w-64 rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
+			className="fixed z-50 w-64 rounded-lg border-2 border-gray-200 bg-white p-4 shadow-lg"
 			style={{
 				left: `${position.x}px`,
 				top: `${position.y}px`,
 				transform: "translate(-50%, -100%) translateY(-8px)",
 			}}
 		>
-			<form onSubmit={handleSubmit} className="space-y-4">
+			<div>
+				<div className="mb-1 flex">
+					<div className="-ml-2 -mt-2 flex-1">
+						<button
+							type="button"
+							onClick={handleRemove}
+							className="mod-destructive text-xs !shadow-none"
+						>
+							Remove
+						</button>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="clickable-icon -mr-2 -mt-2"
+						ref={closeButtonRef}
+					/>
+				</div>
 				<textarea
 					ref={inputRef}
 					value={comment}
 					onChange={(e) => setComment(e.target.value)}
-					className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-					rows={3}
+					className="mb-2 w-full"
+					rows={5}
 					placeholder="Add your annotation..."
+					onKeyDown={(e) => {
+						if (e.key === "Enter" && !e.shiftKey) {
+							handleSubmit();
+						}
+						if (e.key === "Escape") {
+							onClose();
+						}
+					}}
 				/>
-				<div className="flex justify-end space-x-2">
+				<div className="flex space-x-2">
+					<div className="flex-1"></div>
 					<button
 						type="button"
-						onClick={handleRemove}
-						className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-					>
-						Remove
-					</button>
-					<button
-						type="button"
-						onClick={onClose}
-						className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-					>
-						Cancel
-					</button>
-					<button
-						type="submit"
-						className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
+						className="mod-cta"
+						onClick={handleSubmit}
 					>
 						Save
 					</button>
 				</div>
-			</form>
+			</div>
 		</div>
 	);
 }

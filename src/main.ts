@@ -9,7 +9,11 @@ import {
 } from "obsidian";
 import { AnnotateModal } from "./AnnotateModal";
 import allColorNames from "./colors";
-import { highlightExtension } from "./annotationExtension";
+import {
+	highlightExtension,
+	openPopover,
+	cleanup as cleanupPopover,
+} from "./annotationExtension";
 
 const DEFAULT_SETTINGS = {
 	expandSelection: true,
@@ -186,6 +190,7 @@ export default class OmnireaderPlugin extends Plugin {
 
 		editor.replaceSelection(annotationText);
 		editor.blur();
+		openPopover();
 	}
 
 	expandSelectionBoundary(editor: Editor) {
@@ -242,7 +247,9 @@ export default class OmnireaderPlugin extends Plugin {
 		return null;
 	}
 
-	onunload() {}
+	onunload() {
+		cleanupPopover();
+	}
 
 	async loadSettings() {
 		this.settings = Object.assign(
