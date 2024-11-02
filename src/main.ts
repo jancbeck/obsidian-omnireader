@@ -7,12 +7,17 @@ import {
 import { OmnireaderSettingTab } from "@/settings";
 import { createHighlightCommand } from "@/editor/commands";
 import postprocessor from "@/preview/postprocessor";
+import allColorNames from "./colors";
 
-const DEFAULT_SETTINGS = {
-	expandSelection: true,
-	colors: "lightsalmon, lavender, palegreen, gold, lightpink, powderblue, wheat",
+type OmnireaderSettings = {
+	expandSelection: boolean;
+	colors: (typeof allColorNames)[number]["name"][];
 };
-type OmnireaderSettings = typeof DEFAULT_SETTINGS;
+
+const DEFAULT_SETTINGS: OmnireaderSettings = {
+	expandSelection: true,
+	colors: ["moccasin", "lavender", "palegreen", "lightpink"],
+};
 
 export default class OmnireaderPlugin extends Plugin {
 	settings: OmnireaderSettings;
@@ -57,7 +62,7 @@ export default class OmnireaderPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						createHighlightCommand(markdownView.editor, this);
+						createHighlightCommand(markdownView, this);
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -81,7 +86,7 @@ export default class OmnireaderPlugin extends Plugin {
 			// require modifier key when not in annotate mode
 			if (!e.metaKey && !this.isAnnotateModeOn) return;
 
-			createHighlightCommand(editor, this);
+			createHighlightCommand(view, this);
 		});
 
 		this.registerMarkdownPostProcessor(postprocessor);

@@ -14,12 +14,12 @@ interface AnnotationPopoverProps {
 	position: { x: number; y: number };
 }
 
-export default function AnnotationPopover({
+export default ({
 	initialComment = "",
 	onSave,
 	onClose,
 	position,
-}: AnnotationPopoverProps) {
+}: AnnotationPopoverProps) => {
 	const [comment, setComment] = useState(initialComment);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const popoverRef = useRef<HTMLDivElement>(null);
@@ -113,4 +113,4 @@ export default function AnnotationPopover({
 			</div>
 		</div>
 	);
-}
+};

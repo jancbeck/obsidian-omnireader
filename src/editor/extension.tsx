@@ -3,6 +3,7 @@ import {
 	StateField,
 	Extension,
 	Text,
+	StateEffect,
 	type Range,
 } from "@codemirror/state";
 import {
@@ -10,13 +11,15 @@ import {
 	Decoration,
 	DecorationSet,
 	WidgetType,
+	ViewPlugin,
+	ViewUpdate,
 } from "@codemirror/view";
 import { createRoot, type Root } from "react-dom/client";
 import AnnotationPopover from "./popover";
 import allColorNames from "../colors";
 
 let currentPopover: { root: Root; container: HTMLElement } | null = null;
-let lastInstance: HTMLElement | null = null;
+const ShowPopoverEffect = StateEffect.define<{ from: number; to: number }>();
 
 interface HighlightMatch {
 	from: number;
@@ -52,8 +55,8 @@ class HighlightWidget extends WidgetType {
 	toDOM(view: EditorView) {
 		const wrapper = document.createElement("span");
 		wrapper.className = this.hasAnnotation
-			? "obsidian-highlight annotated"
-			: "obsidian-highlight";
+			? "omnireader-highlight annotated"
+			: "omnireader-highlight";
 		wrapper.textContent = this.highlightText;
 
 		// Store metadata
@@ -66,7 +69,7 @@ class HighlightWidget extends WidgetType {
 		wrapper.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.showPopover(e, view);
+			this.showPopover(view);
 		});
 
 		// Add tooltip if there's a comment
@@ -74,12 +77,12 @@ class HighlightWidget extends WidgetType {
 			wrapper.title = this.comment;
 		}
 
-		this.wrapperEl = lastInstance = wrapper;
+		this.wrapperEl = wrapper;
 
 		return wrapper;
 	}
 
-	private showPopover(event: MouseEvent, view: EditorView) {
+	public showPopover(view: EditorView) {
 		if (!this.wrapperEl) return;
 
 		// Remove any existing popover
@@ -162,41 +165,33 @@ class HighlightWidget extends WidgetType {
 
 function findHighlightsAndAnnotations(doc: Text): HighlightMatch[] {
 	const matches: HighlightMatch[] = [];
+	const docText = doc.toString();
 
-	// Two regex patterns: one for highlights with annotations, one for just highlights
-	const annotatedRegex = /==([^=]+)==<!--([^>]*)-->/gm;
-	const highlightRegex = /==(?!<!--)([^=]+)==(?!<!--)/gm; // Negative lookahead to avoid matching annotated ones
+	const annotatedRegex = /==([^=]+)==<!--([\s\S]*?)-->/gm;
+	const highlightRegex = /==(?!<!--)([^=]+)==(?!<!--)/gm;
 
-	// Process each line
-	for (let i = 1; i <= doc.lines; i++) {
-		const line = doc.line(i);
-		const lineText = line.text;
+	// Find annotated highlights
+	let match;
+	while ((match = annotatedRegex.exec(docText)) !== null) {
+		matches.push({
+			from: match.index,
+			to: match.index + match[0].length,
+			highlightText: match[1],
+			comment: match[2],
+			fullMatch: match[0],
+			hasAnnotation: true,
+		});
+	}
 
-		// First find annotated highlights
-		annotatedRegex.lastIndex = 0;
-		let match;
-		while ((match = annotatedRegex.exec(lineText)) !== null) {
-			matches.push({
-				from: line.from + match.index,
-				to: line.from + match.index + match[0].length,
-				highlightText: match[1],
-				comment: match[2],
-				fullMatch: match[0],
-				hasAnnotation: true,
-			});
-		}
-
-		// Then find standalone highlights
-		highlightRegex.lastIndex = 0;
-		while ((match = highlightRegex.exec(lineText)) !== null) {
-			matches.push({
-				from: line.from + match.index,
-				to: line.from + match.index + match[0].length,
-				highlightText: match[1],
-				fullMatch: match[0],
-				hasAnnotation: false,
-			});
-		}
+	// Find standalone highlights
+	while ((match = highlightRegex.exec(docText)) !== null) {
+		matches.push({
+			from: match.index,
+			to: match.index + match[0].length,
+			highlightText: match[1],
+			fullMatch: match[0],
+			hasAnnotation: false,
+		});
 	}
 
 	return matches;
@@ -237,25 +232,37 @@ export function highlightExtension(): Extension {
 		provide: (f) => EditorView.decorations.from(f),
 	});
 
-	return [
-		highlightField,
-		EditorView.baseTheme({
-			".obsidian-highlight": {
-				backgroundColor: "rgba(255, 255, 0, 0.2)",
-				cursor: "pointer",
-				borderRadius: "3px",
-				padding: "0 2px",
-				transition: "background-color 0.2s",
-			},
-			".obsidian-highlight.annotated": {
-				backgroundColor: "rgba(255, 255, 0, 0.3)",
-				borderBottom: "1px dotted #999",
-			},
-			".obsidian-highlight:hover": {
-				backgroundColor: "rgba(255, 255, 0, 0.4)",
-			},
-		}),
-	];
+	// Add ViewPlugin to handle the effect
+	const highlightPlugin = ViewPlugin.fromClass(
+		class {
+			update(update: ViewUpdate) {
+				for (const effect of update.transactions[0]?.effects || []) {
+					if (effect.is(ShowPopoverEffect)) {
+						const decorations = update.state.field(highlightField);
+						decorations.between(
+							effect.value.from,
+							effect.value.to,
+							(from, to, deco) => {
+								if (
+									deco.spec.widget instanceof HighlightWidget
+								) {
+									setTimeout(
+										() =>
+											deco.spec.widget.showPopover(
+												update.view
+											),
+										0
+									);
+								}
+							}
+						);
+					}
+				}
+			}
+		}
+	);
+
+	return [highlightField, highlightPlugin];
 }
 
 // Helper function to create a new highlight
@@ -275,16 +282,16 @@ export function createHighlight(view: EditorView) {
 			to: selection.to,
 			insert: highlightText,
 		},
+		effects: [
+			ShowPopoverEffect.of({
+				from: selection.from,
+				to: selection.from + highlightText.length,
+			}),
+		],
 	});
 
 	view.dispatch(transaction);
 	return true;
-}
-
-export function openPopover() {
-	if (lastInstance) {
-		lastInstance.dispatchEvent(new Event("click"));
-	}
 }
 
 export function cleanup() {

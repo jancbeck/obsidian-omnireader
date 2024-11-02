@@ -1,11 +1,13 @@
-import { Editor, Notice } from "obsidian";
-import { openPopover } from "./extension";
+import { type MarkdownView, type Editor, Notice } from "obsidian";
+import type {} from "@codemirror/view";
+import { createHighlight } from "./extension";
 import type OmnireaderPlugin from "@";
 
-export function createHighlightCommand(
-	editor: Editor,
+export async function createHighlightCommand(
+	view: MarkdownView,
 	plugin: OmnireaderPlugin
 ) {
+	const editor = view.editor;
 	let selectedText = editor.getSelection();
 
 	if (!selectedText) {
@@ -32,11 +34,11 @@ export function createHighlightCommand(
 		selectedText = expandSelectionBoundary(editor);
 	}
 
-	const annotationText = `==${selectedText}==`;
-
-	editor.replaceSelection(annotationText);
 	editor.blur();
-	openPopover();
+
+	// @ts-expect-error, not typed
+	const editorView = view.editor.cm as EditorView;
+	createHighlight(editorView);
 }
 
 function expandSelectionBoundary(editor: Editor) {

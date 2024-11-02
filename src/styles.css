@@ -1,35 +1,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* you know we could just add a class to this element in our postprocessor but that would completely mess up Obsidian */
-section.footnotes {
-	display: none;
+.markdown-rendered p {
+	--p-spacing: 1.5rem; /* to match default theme preview/source. REMOVE BEFORE PUBLISHING */
 }
-.markdown-preview-view {
-	& .omnireader-higlight {
-		&:hover {
-			filter: saturate(2);
-		}
-		& a:hover {
-			text-decoration: none;
-		}
-	}
-}
-.is-live-preview {
-	& .cm-highlight {
-		cursor: pointer;
-		&:hover {
-			filter: saturate(2);
-		}
-	}
 
-	/* hide higlight markdown markers */
-	& .cm-formatting-highlight {
-		display: none;
-	}
-
-	/* hide the inline footnotes markdown */
-	& .cm-inline-footnote {
-		display: none;
+.omnireader-highlight {
+	background-color: var(--text-highlight-bg);
+	border-bottom: 2px solid var(--text-highlight-border);
+	color: var(--text-normal);
+	cursor: pointer;
+	&:hover {
+		filter: saturate(2);
 	}
 }
