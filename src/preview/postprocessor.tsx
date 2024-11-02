@@ -41,8 +41,6 @@ export default (
 		const comment = matches[matchIndex].match(/<!--([^>]*)-->/)?.[1];
 		if (!comment) continue;
 
-		mark.createEl("h1", { text: "Heading 1" });
-
 		// Create React root and render margin note
 		element.addClass("relative");
 		const root = createRoot(
