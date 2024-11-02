@@ -48,6 +48,8 @@ function expandSelectionBoundary(editor: Editor) {
 	const lineTo = editor.getLine(to.line);
 	let start = from.ch;
 	let end = to.ch;
+
+	// First expand to word boundaries
 	while (
 		start > 0 &&
 		lineFrom[start - 1].match(/\w/) &&
@@ -62,6 +64,15 @@ function expandSelectionBoundary(editor: Editor) {
 	) {
 		end++;
 	}
+
+	// Then shrink from both ends to remove whitespace
+	while (start < lineFrom.length && lineFrom[start].match(/\s/)) {
+		start++;
+	}
+	while (end > 0 && lineTo[end - 1].match(/\s/)) {
+		end--;
+	}
+
 	editor.setSelection(
 		{ line: from.line, ch: start },
 		{ line: to.line, ch: end }
